@@ -1,5 +1,3 @@
-from cStringIO import StringIO
-import os
 import re
 import math
 from nltk.tokenize import RegexpTokenizer
@@ -33,30 +31,28 @@ en_stop = en_stop +my_stopwords1
 
 texts=[]
 complaintsnarrative = creditcomplaints["Consumer complaint narrative"].tolist()
-#Loop through the documents
-for i in complaintsnarrative:
-    #clean and tokenize document string
-    #temp = i
-    raw = i.lower()
 
-    tokens = bigrams(i for i in tokenizer.tokenize(raw)if not i in en_stop and len(i)>1)
+from sklearn.feature_extraction.text import TfidfVectorizer
+vectorizer = TfidfVectorizer(min_df = 1)
+x = vectorizer.fit_transform(complaintsnarrative)
 
-    #stem tokens
-    #stemmed_tokens = [p_stemmer.stem(i) for i in tokens]
-    #remove stop words from tokens
+type(x)
+print x.shape
+terms = vectorizer.get_feature_names()
+from sklearn.cluster import KMeans
 
-    mergedTokens = [i[0]+" "+i[1] for i in tokens]
-    stopped_tokens = [i for i in mergedTokens if not i in en_stop]
+num_clusters = 5
 
-    #add tokens to list
-    texts.append(stopped_tokens)
+km = KMeans(n_clusters=num_clusters)
 
-#turn our tokenized documents into # a documents into a id <-> term dictionary
-dictionary = corpora.Dictionary(texts)
+km.fit(x)
 
-#convert tokenized documents into a document-term matrix
-corpus = [dictionary.doc2bow(text) for text in texts]
+clusters = km.labels_.tolist()
 
-# generate LDA model
-ldamodel = gensim.models.LdaModel(corpus, num_topics = 5 , id2word = dictionary, passes = 1)
-print(ldamodel.show_topics(num_topics=5))
+
+kmeans_clusters = []
+for i in range(num_clusters):
+    kmeans_clusters.append([])
+
+for i,cluster in enumerate(clusters):
+    kmeans_clusters[cluster].append(complaintsnarrative[i])
